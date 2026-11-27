@@ -1,0 +1,39 @@
+# 태그(v0.1.1 처럼 v 로 시작)를 올리면 Windows 설치 파일을 빌드해서 GitHub Releases 에 초안(draft)으로 올린다.
+# 초안은 사용자 앱에 보이지 않는다. 확인한 뒤 Releases 화면에서 "Publish release" 를 눌러야 자동 업데이트가 나간다.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # 릴리즈를 만들고 파일을 올리려면 필요
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 태그와 package.json 버전이 같은지 확인
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "태그($GITHUB_REF_NAME)와 package.json 버전(v$version)이 다릅니다. 버전을 맞춘 뒤 태그를 다시 만드세요."
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: 설치 파일 빌드 후 릴리즈(초안)에 업로드
+        run: npx electron-builder --win nsis --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

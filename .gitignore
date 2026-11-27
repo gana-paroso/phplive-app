@@ -1,0 +1,10 @@
+node_modules/
+.taste-skill/
+dist/
+.env
+.env.*
+*.pem
+*.pfx
+*.p12
+*.key
+*.log

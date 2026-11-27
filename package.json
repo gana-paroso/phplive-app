@@ -1,0 +1,62 @@
+{
+  "name": "phplive",
+  "version": "0.1.0",
+  "description": "디자이너용 로컬 PHP 서버 관리 도구",
+  "author": "gana-paroso",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/gana-paroso/phplive-app#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gana-paroso/phplive-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gana-paroso/phplive-app/issues"
+  },
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.js\"",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0",
+    "pretendard": "^1.3.9"
+  },
+  "build": {
+    "appId": "com.phplive.app",
+    "productName": "PHP Live",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**",
+      "ui/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "PHP-Live-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "language": "1042",
+      "createDesktopShortcut": true,
+      "shortcutName": "PHP Live"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "gana-paroso",
+        "repo": "phplive-app"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  }
+}

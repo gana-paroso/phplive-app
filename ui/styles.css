@@ -51,6 +51,10 @@ h1, h2, h3, p { margin: 0; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--control); flex: none; }
 .dot.run { background: var(--accent); }
 .dot.warn { background: #a86f0c; }
+.dot.ok { background: var(--positive); }
+.dot.bad { background: var(--negative); }
+.gh-chip.fail { color: var(--negative); font-weight: 500; }
+.warn-text { color: var(--pill-warning-ink); font-weight: 500; }
 .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sheet); margin: 0 var(--inset) var(--inset) 0; padding: var(--pad); overflow: auto; }
 
 /* 제목줄 */

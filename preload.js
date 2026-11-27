@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   load: call('load'),
   installUpdate: call('update:install'),
   onUpdate: cb => ipcRenderer.on('update', (_e, state) => cb(state)),
+  onGithub: cb => ipcRenderer.on('github-status', (_e, g) => cb(g)),
   pick: call('pick'),
   project: { save: call('project:save'), remove: call('project:remove') },
   php: { probe: call('php:probe'), add: call('php:add'), remove: call('php:remove'), setDefault: call('php:default'), openIni: call('php:ini') },

@@ -48,6 +48,30 @@ function fmtWhen(iso) {
   return ymd(d) === DB.today ? `오늘 ${hm}` : ymd(d) === ymd(y) ? `어제 ${hm}` : `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
+/** GitHub 연결 상태(none/checking/ok/fail)를 점 색과 문구로 정리한다. 연결됨은 초록, 연결 실패는 빨강. */
+function ghView() {
+  const g = DB.github, s = g.status ?? { state: 'none' }, d = daysLeft();
+  if (s.state === 'fail') return { dot: 'bad', fail: true, chip: 'GitHub 연결 실패', summary: '연결 실패' };
+  if (s.state === 'checking') return { dot: '', chip: 'GitHub 연결 확인 중…', summary: '연결 확인 중…' };
+  if (s.state === 'ok') return { dot: 'ok', chip: `GitHub @${esc(g.user)}${d === null ? '' : ` · <span class="${d <= 30 ? 'warn-text' : ''}">토큰 ${d}일 남음</span>`}`, summary: `연결됨 · @${esc(g.user)}` };
+  return { dot: '', chip: 'GitHub 연결 안 됨', summary: '연결 안 됨' };
+}
+const ghSummaryHtml = () => { const v = ghView(); return `<span class="state"><span class="dot ${v.dot}"></span>${v.summary}</span>`; };
+/** 전역 설정의 GitHub 연결 영역 맨 위에 보여줄 실패 사유 */
+function ghReasonHtml() {
+  const s = DB.github.status;
+  if (s?.state !== 'fail') return '';
+  return `<div class="result err" role="alert" style="margin:0 0 16px;align-items:flex-start"><div><b style="font-weight:600">연결 실패 사유</b><div>${esc(s.reason)}</div><div style="margin-top:4px;opacity:.85">문제를 해결한 뒤 아래 “만료일 다시 확인”을 눌러 주세요.</div></div><span class="stamp">${esc(s.at ?? '')}</span></div>`;
+}
+/** 상단 연결 표시와(열려 있다면) 전역 설정의 연결 상태·실패 사유를 갱신한다. */
+function renderGh() {
+  const v = ghView(), chip = $('#gh-chip');
+  chip.className = 'gh-chip' + (v.fail ? ' fail' : '');
+  chip.innerHTML = `<span class="dot ${v.dot}"></span><span>${v.chip}</span>`;
+  if ($('#gh-summary')) $('#gh-summary').innerHTML = ghSummaryHtml();
+  if ($('#gh-reason')) $('#gh-reason').innerHTML = ghReasonHtml();
+}
+
 /** 사이드바 아래의 업데이트 알림(받는 중 / 재시작 대기)과 앱 버전을 그린다. */
 function renderUpdate() {
   const u = DB.update, el = $('#upd');
@@ -69,9 +93,7 @@ function render() {
   view.innerHTML = v.html;
   $('#crumb').innerHTML = v.crumb;
   document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('on', a.dataset.nav === route));
-  const d = daysLeft();
-  $('#gh-chip').innerHTML = !DB.github.hasToken ? '<span class="dot"></span>GitHub 연결 안 됨'
-    : `<span class="dot ${d !== null && d <= 30 ? 'warn' : 'run'}"></span>GitHub @${esc(DB.github.user)}${d === null ? '' : ` · 토큰 ${d}일 남음`}`;
+  renderGh();
   $('#side-count').textContent = `${DB.projects.length}개`;
   renderUpdate();
   if (v.after) v.after();
@@ -266,7 +288,7 @@ const settingsView = {
           <div class="hint">${vs.ok ? '확인됨 · 파일이 존재합니다' : vs.path ? '경로의 파일을 찾을 수 없습니다' : '아직 등록하지 않았습니다 (Code.exe 를 선택해 주세요)'}</div></label>
           <div class="save"><button class="btn btn-primary" data-act="save-vscode">저장</button></div>`) +
       section('GitHub 연결', '내려받기·올리기에 쓰는 토큰입니다. 계정은 토큰으로 자동 확인되고, 토큰은 Windows 사용자 계정으로 암호화되어 이 컴퓨터에만 저장됩니다.',
-        `${d !== null && d <= 30 ? `<div class="notice" style="margin-bottom:16px">${d <= 0 ? '토큰이 만료되었습니다.' : `${d}일 뒤 토큰이 만료됩니다.`} 만료되면 내려받기·올리기가 실패하니 새 토큰으로 바꿔 주세요.</div>` : ''}
+        `<div id="gh-reason">${ghReasonHtml()}</div>${d !== null && d <= 30 ? `<div class="notice" style="margin-bottom:16px">${d <= 0 ? '토큰이 만료되었습니다.' : `${d}일 뒤 토큰이 만료됩니다.`} 만료되면 내려받기·올리기가 실패하니 새 토큰으로 바꿔 주세요.</div>` : ''}
         <label class="field"><span>GitHub 계정</span><input value="${esc(g.user)}" placeholder="토큰을 저장하면 자동으로 채워집니다" readonly aria-label="GitHub 계정"></label>
         <label class="field"><span>액세스 토큰</span><input id="s-token" class="mono" type="password" autocomplete="off" placeholder="${g.hasToken ? '저장됨 · 바꾸려면 새 토큰을 붙여넣으세요' : 'github_pat_… 를 붙여넣으세요'}" aria-label="액세스 토큰">
           <div class="hint">필요 권한: 저장소 Contents 읽기·쓰기</div></label>
@@ -274,7 +296,7 @@ const settingsView = {
           <div class="state">${!g.hasToken ? '<span class="muted">—</span>' : g.expires ? `<b style="font-weight:500">${g.expires}</b><span class="muted">까지 · ${d}일 남음</span>` : '<span class="muted">만료일이 없는 토큰입니다</span>'}</div>
           ${g.checkedAt ? `<div class="hint">${g.checkedAt}에 GitHub에서 확인</div>` : ''}</div>
         <div class="save" style="justify-content:space-between"><button class="btn" data-act="recheck" ${g.hasToken ? '' : 'disabled'}>${ico('refresh')}만료일 다시 확인</button><button class="btn btn-primary" data-act="save-github">저장</button></div>`,
-        `<p class="summary"><span class="state"><span class="dot ${!g.hasToken ? '' : d !== null && d <= 30 ? 'warn' : 'run'}"></span>${g.hasToken ? `연결됨 · @${esc(g.user)}` : '연결 안 됨'}</span></p>`) +
+        `<p class="summary" id="gh-summary">${ghSummaryHtml()}</p>`) +
       section('서버 기본값', '프로젝트에서 서버를 시작할 때 적용됩니다.',
         `<div class="switch-row"><div><b>시작하면 브라우저 자동 열기</b><div class="muted">서버가 준비되면 기본 브라우저에서 주소를 엽니다.</div></div>
           <label class="toggle"><input id="s-auto" type="checkbox" ${s.autoOpen ? 'checked' : ''} aria-label="브라우저 자동 열기"><i></i></label></div>
@@ -383,5 +405,6 @@ document.addEventListener('click', e => {
 document.addEventListener('submit', e => { if (e.target.id === 'sf') { e.preventDefault(); ui.q = $('#q').value; ui.page = 1; tableHtml(); } });
 addEventListener('hashchange', () => { gitSt = {}; gitOp = null; render(); });
 
+api.onGithub(g => { if (DB) { DB.github = g; renderGh(); } }); // 연결 확인 결과는 화면 전체를 다시 그리지 않고 표시만 갱신한다
 api.onUpdate(s => { if (DB) { DB.update = s; renderUpdate(); } }); // 업데이트 상태는 화면 전체를 다시 그리지 않고 알림만 갱신한다
 api.load().then(d => { DB = d; render(); }).catch(e => toast(e.message, true));

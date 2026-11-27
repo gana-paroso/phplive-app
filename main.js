@@ -23,9 +23,38 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'ui', 'index.html'));
 }
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
-app.whenReady().then(() => { createWindow(); initUpdater(); });
+app.whenReady().then(() => {
+  createWindow(); initUpdater();
+  verifyGithub(); // 앱을 켜면 토큰이 아직 유효한지 확인하고, 이후 30분마다 다시 확인한다
+  setInterval(verifyGithub, 30 * 60 * 1000);
+});
 app.on('before-quit', server.stopAll); // 앱을 끄면 켜 둔 PHP 서버도 함께 종료
 app.on('window-all-closed', () => app.quit());
+
+/* ---------- GitHub 연결 상태 ---------- */
+// none(토큰 없음) | checking(확인 중) | ok(연결됨) | fail(연결 실패, reason 에 사유)
+let ghStatus = { state: 'checking' };
+const hm = () => new Date().toTimeString().slice(0, 5);
+const ghPublic = () => {
+  const g = store.load().github;
+  return { user: g.user, hasToken: store.hasToken(), expires: g.expires, checkedAt: g.checkedAt, status: store.hasToken() ? ghStatus : { state: 'none' } };
+};
+function setGh(s) { ghStatus = s; win?.webContents.send('github-status', ghPublic()); }
+
+/** 저장된 토큰으로 GitHub에 연결해 보고 결과(성공/실패 사유)를 상태로 남긴다. 만료일도 함께 갱신한다. */
+async function verifyGithub() {
+  const token = store.getToken();
+  if (!token) return setGh({ state: 'none' });
+  setGh({ state: 'checking' });
+  try {
+    const r = await github.checkToken(token);
+    Object.assign(store.load().github, { user: r.login, expires: r.expires, checkedAt: hm() });
+    store.save();
+    setGh({ state: 'ok', at: hm() });
+  } catch (e) {
+    setGh({ state: 'fail', reason: e.message, at: hm() });
+  }
+}
 
 /* ---------- 자동 업데이트 (GitHub Releases) ---------- */
 let updateState = { state: 'idle' }; // idle | downloading { version, percent } | ready { version }
@@ -53,7 +82,7 @@ function snapshot() {
     version: app.getVersion(), update: updateState,
     today: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
     vscode: { path: c.vscode.path, ok: !!c.vscode.path && fs.existsSync(c.vscode.path) },
-    github: { user: c.github.user, hasToken: store.hasToken(), expires: c.github.expires, checkedAt: c.github.checkedAt },
+    github: ghPublic(),
     server: c.server,
     php: c.php.map(x => ({ ...x, ok: fs.existsSync(x.path) })),
     projects: c.projects.map(p => ({ ...p, port: run[p.id]?.port ?? null, since: run[p.id]?.since ?? null }))
@@ -142,17 +171,16 @@ mutate('github:save', async ({ token }) => {
   if (!token?.trim()) throw new Error('액세스 토큰을 입력해 주세요.');
   const r = await github.checkToken(token.trim());
   store.setToken(token.trim());
-  c.github = { user: r.login, expires: r.expires, checkedAt: new Date().toTimeString().slice(0, 5) };
+  c.github = { user: r.login, expires: r.expires, checkedAt: hm() };
   store.save();
+  setGh({ state: 'ok', at: hm() });
 });
 mutate('github:recheck', async () => {
-  const token = store.getToken();
-  if (!token) throw new Error('저장된 토큰이 없습니다.');
-  const r = await github.checkToken(token);
-  Object.assign(store.load().github, { user: r.login, expires: r.expires, checkedAt: new Date().toTimeString().slice(0, 5) });
-  store.save();
+  if (!store.getToken()) throw new Error('저장된 토큰이 없습니다.');
+  await verifyGithub();
+  if (ghStatus.state === 'fail') throw new Error(`GitHub 연결에 실패했습니다. ${ghStatus.reason}`);
 });
-mutate('github:disconnect', () => { store.clearToken(); store.load().github = { user: '', expires: null, checkedAt: null }; store.save(); });
+mutate('github:disconnect', () => { store.clearToken(); store.load().github = { user: '', expires: null, checkedAt: null }; store.save(); setGh({ state: 'none' }); });
 
 /* ---------- 서버·VSCode·브라우저 ---------- */
 const urlOf = port => `http://localhost:${port}`;

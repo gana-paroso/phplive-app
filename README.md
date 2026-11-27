@@ -95,7 +95,7 @@ git push origin v0.1.1
 ```
 
 4. GitHub 저장소의 **Actions** 탭에서 `release`가 끝나기를 기다립니다. (몇 분 걸립니다)
-5. **Releases** 탭에 **초안(Draft)** 으로 설치 파일, `latest.yml`, `.blockmap`이 올라와 있습니다.
+5. **Releases** 탭에 **초안(Draft) 한 개**가 만들어지고, 설치 파일, `latest.yml`, `.blockmap` 3개 파일이 함께 들어 있습니다. (파일이 3개가 아니면 빌드가 실패하도록 해 두었습니다.)
 6. 내용을 확인한 뒤 **“Publish release”** 를 누릅니다. **이 순간부터 사용자 앱이 새 버전을 받기 시작합니다.**
 
 - 태그와 `package.json`의 `version`이 다르면 빌드가 실패합니다. (실수로 잘못된 버전이 나가는 것을 막기 위함)

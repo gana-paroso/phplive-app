@@ -1,6 +1,6 @@
 {
   "name": "phplive",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "디자이너용 로컬 PHP 서버 관리 도구",
   "author": "gana-paroso",
   "license": "UNLICENSED",

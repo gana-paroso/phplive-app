@@ -75,7 +75,7 @@ function renderGh() {
 /** 사이드바 아래의 업데이트 알림(받는 중 / 재시작 대기)과 앱 버전을 그린다. */
 function renderUpdate() {
   const u = DB.update, el = $('#upd');
-  $('#ver').textContent = `PHP Live v${DB.version}`;
+  $('#ver').textContent = `v${DB.version}`;
   el.hidden = !u || u.state === 'idle';
   if (el.hidden) return;
   el.innerHTML = u.state === 'ready'

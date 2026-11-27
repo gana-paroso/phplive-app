@@ -52,14 +52,15 @@
     <div class="side-foot">
       <div class="upd" id="upd" role="status" aria-live="polite" hidden></div>
       <div class="side-foot-label">이 컴퓨터</div>
-      <div class="side-foot-val">등록된 프로젝트 <span id="side-count"></span></div>
-      <div class="ver" id="ver"></div>
-    </div>
+      <div class="side-foot-val">등록된 프로젝트 <span id="side-count"></span></div>    </div>
   </aside>
 
   <header class="top">
     <nav class="crumb" id="crumb" aria-label="현재 위치"></nav>
-    <a class="gh-chip" href="#/settings" id="gh-chip"></a>
+    <div class="top-right">
+      <span class="ver" id="ver" title="현재 설치된 버전"></span>
+      <a class="gh-chip" href="#/settings" id="gh-chip"></a>
+    </div>
   </header>
 
   <main class="sheet" id="view"></main>

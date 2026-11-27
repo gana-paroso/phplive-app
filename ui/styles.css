@@ -36,7 +36,8 @@ h1, h2, h3, p { margin: 0; }
 .side-foot { margin-top: auto; padding: 10px; }
 .side-foot-label { font-size: 12px; color: var(--muted); }
 .side-foot-val { font-size: 13px; margin-top: 2px; }
-.ver { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.top-right { display: flex; align-items: center; gap: 12px; }
+.ver { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .upd { margin-bottom: 14px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-size: 13px; }
 .upd b { font-weight: 500; }
 .upd .bar { margin: 8px 0 0; }
